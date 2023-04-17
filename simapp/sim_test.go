@@ -197,13 +197,15 @@ func TestAppImportExport(t *testing.T) {
 		feegrant.StoreKey:      {feegrant.FeeAllowanceQueueKeyPrefix},
 	}
 
-	for _, appKeyA := range app.GetStoreKeys() {
-		fmt.Printf("comparing %s...\n", appKeyA.Name())
+	storeKeys := app.GetStoreKeys()
+	require.NotEmpty(t, storeKeys)
 
+	for _, appKeyA := range storeKeys {
 		// only compare kvstores
 		if _, ok := appKeyA.(*storetypes.KVStoreKey); !ok {
 			continue
 		}
+		fmt.Printf("comparing %s...\n", appKeyA.Name())
 
 		keyName := appKeyA.Name()
 		appKeyB := newApp.GetKey(keyName)
