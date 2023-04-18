@@ -166,10 +166,6 @@ func TestAppImportExport(t *testing.T) {
 	err = json.Unmarshal(exported.AppState, &genesisState)
 	require.NoError(t, err)
 
-	if err := os.WriteFile("thistestgenesis.json", exported.AppState, 0644); err != nil {
-		panic(err)
-	}
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := fmt.Sprintf("%v", r)
@@ -207,7 +203,7 @@ func TestAppImportExport(t *testing.T) {
 		if _, ok := appKeyA.(*storetypes.KVStoreKey); !ok {
 			continue
 		}
-		fmt.Printf("comparing %s...\n", appKeyA.Name())
+		fmt.Printf("comparing %s store...\n", appKeyA.Name())
 
 		keyName := appKeyA.Name()
 		appKeyB := newApp.GetKey(keyName)
