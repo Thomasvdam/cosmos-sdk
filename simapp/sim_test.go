@@ -29,7 +29,6 @@ import (
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -167,6 +166,10 @@ func TestAppImportExport(t *testing.T) {
 	err = json.Unmarshal(exported.AppState, &genesisState)
 	require.NoError(t, err)
 
+	if err := os.WriteFile("thistestgenesis.json", exported.AppState, 0644); err != nil {
+		panic(err)
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := fmt.Sprintf("%v", r)
@@ -192,9 +195,8 @@ func TestAppImportExport(t *testing.T) {
 			stakingtypes.HistoricalInfoKey, stakingtypes.UnbondingIDKey, stakingtypes.UnbondingIndexKey,
 			stakingtypes.UnbondingTypeKey, stakingtypes.ValidatorUpdatesKey,
 		},
-		slashingtypes.StoreKey: {slashingtypes.ValidatorMissedBlockBitmapKeyPrefix},
-		authzkeeper.StoreKey:   {authzkeeper.GrantQueuePrefix},
-		feegrant.StoreKey:      {feegrant.FeeAllowanceQueueKeyPrefix},
+		authzkeeper.StoreKey: {authzkeeper.GrantQueuePrefix},
+		feegrant.StoreKey:    {feegrant.FeeAllowanceQueueKeyPrefix},
 	}
 
 	storeKeys := app.GetStoreKeys()
