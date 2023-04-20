@@ -203,7 +203,6 @@ func TestAppImportExport(t *testing.T) {
 		if _, ok := appKeyA.(*storetypes.KVStoreKey); !ok {
 			continue
 		}
-		fmt.Printf("comparing %s store...\n", appKeyA.Name())
 
 		keyName := appKeyA.Name()
 		appKeyB := newApp.GetKey(keyName)
@@ -212,9 +211,9 @@ func TestAppImportExport(t *testing.T) {
 		storeB := ctxB.KVStore(appKeyB)
 
 		failedKVAs, failedKVBs := simtestutil.DiffKVStores(storeA, storeB, skipPrefixes[keyName])
-		require.Equal(t, len(failedKVAs), len(failedKVBs), "unequal sets of key-values to compare")
+		require.Equal(t, len(failedKVAs), len(failedKVBs), "unequal sets of key-values to compare %s", keyName)
 
-		fmt.Printf("compared %d different key/value pairs between %s and %s\n\n", len(failedKVAs), appKeyA, appKeyB)
+		fmt.Printf("compared %d different key/value pairs between %s and %s\n", len(failedKVAs), appKeyA, appKeyB)
 
 		require.Equal(t, 0, len(failedKVAs), simtestutil.GetSimulationLog(keyName, app.SimulationManager().StoreDecoders, failedKVAs, failedKVBs))
 	}
