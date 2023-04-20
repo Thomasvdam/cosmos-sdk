@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 	"sync"
 
 	dbm "github.com/cosmos/cosmos-db"
@@ -158,25 +157,37 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 
 	wg.Wait()
 
-	// get difference between kvAs and kvBs which are sorted but have different lengths
+	return getDiffFromKVPair(kvAs, kvBs)
+}
+
+// getDiffFromKVPair compares two KVstores and returns all the key/value pairs
+func getDiffFromKVPair(kvAs, kvBs []kv.Pair) (diffA, diffB []kv.Pair) {
+	// we assume that kvBs is equal or larger than kvAs
+	// if not, we swap the two
 	if len(kvAs) > len(kvBs) {
-		for i := 0; i < len(kvBs); i++ {
-			if !bytes.Equal(kvAs[i].Key, kvBs[i].Key) || !bytes.Equal(kvAs[i].Value, kvBs[i].Value) {
-				diffA = append(diffA, kvAs[i])
-				diffB = append(diffB, kvBs[i])
-			}
-		}
+		kvAs, kvBs = kvBs, kvAs
+	}
 
-		diffA = append(diffA, kvAs[len(kvBs):]...)
-	} else {
-		for i := 0; i < len(kvAs); i++ {
-			if !bytes.Equal(kvAs[i].Key, kvBs[i].Key) || !bytes.Equal(kvAs[i].Value, kvBs[i].Value) {
-				diffA = append(diffA, kvAs[i])
-				diffB = append(diffB, kvBs[i])
-			}
-		}
+	// in case kvAs is empty we can return early
+	// since there is nothing to compare
+	// if kvAs == kvBs, then diffA and diffB will be empty
+	if len(kvAs) == 0 {
+		return []kv.Pair{}, kvBs
+	}
 
-		diffB = append(diffB, kvBs[len(kvAs):]...)
+	index := make(map[string][]byte, len(kvBs)+len(kvAs))
+	for _, kv := range kvBs {
+		index[string(kv.Key)] = kv.Value
+	}
+
+	for _, kvA := range kvAs {
+		if kvBValue, ok := index[string(kvA.Key)]; !ok {
+			diffA = append(diffA, kvA)
+			diffB = append(diffB, kv.Pair{}) // the key is missing from kvB so we append an empty KVPair
+		} else if !bytes.Equal(kvA.Value, kvBValue) {
+			diffA = append(diffA, kvA)
+			diffB = append(diffB, kv.Pair{Key: kvA.Key, Value: kvBValue})
+		}
 	}
 
 	return diffA, diffB
@@ -209,11 +220,6 @@ func getKVPair(iter dbm.Iterator, prefixesToSkip [][]byte) []kv.Pair {
 
 		iter.Next()
 	}
-
-	// sort the KV pairs by key
-	sort.Slice(kvs, func(i, j int) bool {
-		return bytes.Compare(kvs[i].Key, kvs[j].Key) < 0
-	})
 
 	return kvs
 }

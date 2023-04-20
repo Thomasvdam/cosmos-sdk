@@ -62,24 +62,30 @@ func TestDiffKVStores(t *testing.T) {
 	store1.Set(k1, v1)
 	store2.Set(k1, v1)
 
-	checkDiffResults(t, store1, store2)
+	checkDiffResults(t, store1, store2, true, nil)
 
 	// delete k1 from store2, which is now empty
 	store2.Delete(k1)
-	checkDiffResults(t, store1, store2)
+	checkDiffResults(t, store1, store2, false, nil)
 
 	// set k1 in store2, different value than what store1 holds for k1
 	v2 := []byte("v2")
 	store2.Set(k1, v2)
-	checkDiffResults(t, store1, store2)
+	checkDiffResults(t, store1, store2, false, nil)
 
 	// add k2 to store2
 	k2 := []byte("k2")
 	store2.Set(k2, v2)
-	checkDiffResults(t, store1, store2)
+	checkDiffResults(t, store1, store2, false, nil)
+
+	// add k3 to store1
+	k3 := []byte("k3")
+	store1.Set(k3, v2)
+	checkDiffResults(t, store1, store2, false, nil)
 
 	// Reset stores
 	store1.Delete(k1)
+	store1.Delete(k3)
 	store2.Delete(k1)
 	store2.Delete(k2)
 
@@ -88,14 +94,23 @@ func TestDiffKVStores(t *testing.T) {
 	k1Prefixed := append(prefix, k1...)
 	store1.Set(k1Prefixed, v1)
 	store2.Set(k1Prefixed, v2)
-	checkDiffResults(t, store1, store2)
+	checkDiffResults(t, store1, store2, true, [][]byte{prefix})
 }
 
-func checkDiffResults(t *testing.T, store1, store2 storetypes.KVStore) {
-	kvAs1, kvBs1 := DiffKVStores(store1, store2, nil)
-	kvAs2, kvBs2 := DiffKVStores(store1, store2, nil)
+func checkDiffResults(t *testing.T, store1, store2 storetypes.KVStore, noDiff bool, skipPrefixes [][]byte) {
+	t.Helper()
+
+	kvAs1, kvBs1 := DiffKVStores(store1, store2, skipPrefixes)
+	kvAs2, kvBs2 := DiffKVStores(store1, store2, skipPrefixes)
 	assert.DeepEqual(t, kvAs1, kvAs2)
 	assert.DeepEqual(t, kvBs1, kvBs2)
+
+	if noDiff {
+		assert.Assert(t, len(kvAs1) == 0)
+		assert.Assert(t, len(kvBs1) == 0)
+	} else {
+		assert.Assert(t, len(kvAs1) > 0 || len(kvBs1) > 0)
+	}
 }
 
 func initTestStores(t *testing.T) (storetypes.KVStore, storetypes.KVStore) {
