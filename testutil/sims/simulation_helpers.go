@@ -160,7 +160,7 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 	wg.Wait()
 
 	if len(kvAs) != len(kvBs) {
-		fmt.Printf("kv store different: %d k/v pairs in store A and %d k/v pairs in store B\n", len(kvAs), len(kvBs))
+		fmt.Printf("kv store are different: %d k/v pairs in store A and %d k/v pairs in store B\n", len(kvAs), len(kvBs))
 	}
 
 	return getDiffFromKVPair(kvAs, kvBs)
@@ -172,6 +172,10 @@ func getDiffFromKVPair(kvAs, kvBs []kv.Pair) (diffA, diffB []kv.Pair) {
 	// if not, we swap the two
 	if len(kvAs) > len(kvBs) {
 		kvAs, kvBs = kvBs, kvAs
+		// we need to swap the diffA and diffB as well
+		defer func() {
+			diffA, diffB = diffB, diffA
+		}()
 	}
 
 	// in case kvAs is empty we can return early
