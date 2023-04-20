@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
+	"sync"
 
 	dbm "github.com/cosmos/cosmos-db"
 
@@ -131,56 +133,83 @@ func GetSimulationLog(storeName string, sdr simtypes.StoreDecoderRegistry, kvAs,
 
 // DiffKVStores compares two KVstores and returns all the key/value pairs
 // that differ from one another. It also skips value comparison for a set of provided prefixes.
-func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (kvAs, kvBs []kv.Pair) {
+func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diffB []kv.Pair) {
 	iterA := a.Iterator(nil, nil)
-
 	defer iterA.Close()
 
 	iterB := b.Iterator(nil, nil)
-
 	defer iterB.Close()
 
-	for {
-		if !iterA.Valid() && !iterB.Valid() {
-			return kvAs, kvBs
+	kvAs := make([]kv.Pair, 0)
+	kvBs := make([]kv.Pair, 0)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		kvAs = getKVPair(iterA, prefixesToSkip)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		kvBs = getKVPair(iterB, prefixesToSkip)
+	}()
+
+	wg.Wait()
+
+	// get difference between kvAs and kvBs which are sorted but have different lengths
+	if len(kvAs) > len(kvBs) {
+		for i := 0; i < len(kvBs); i++ {
+			if !bytes.Equal(kvAs[i].Key, kvBs[i].Key) || !bytes.Equal(kvAs[i].Value, kvBs[i].Value) {
+				diffA = append(diffA, kvAs[i])
+				diffB = append(diffB, kvBs[i])
+			}
 		}
-
-		var kvA, kvB kv.Pair
-		if iterA.Valid() {
-			kvA = kv.Pair{Key: iterA.Key(), Value: iterA.Value()}
-
-			iterA.Next()
+	} else {
+		for i := 0; i < len(kvAs); i++ {
+			if !bytes.Equal(kvAs[i].Key, kvBs[i].Key) || !bytes.Equal(kvAs[i].Value, kvBs[i].Value) {
+				diffA = append(diffA, kvAs[i])
+				diffB = append(diffB, kvBs[i])
+			}
 		}
+	}
 
-		if iterB.Valid() {
-			kvB = kv.Pair{Key: iterB.Key(), Value: iterB.Value()}
-		}
+	return diffA, diffB
+}
 
-		compareValue := true
+func getKVPair(iter dbm.Iterator, prefixesToSkip [][]byte) []kv.Pair {
+	kvs := make([]kv.Pair, 0)
 
+	for iter.Valid() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("recovered from panic: %v\n", r)
+			}
+		}()
+
+		key, value := iter.Key(), iter.Value()
+
+		// do not add the KV pair if the key is prefixed to be skipped.
+		skip := false
 		for _, prefix := range prefixesToSkip {
-			// Skip value comparison if we matched a prefix
-			if bytes.HasPrefix(kvA.Key, prefix) {
-				compareValue = false
+			if bytes.HasPrefix(key, prefix) {
+				skip = true
 				break
 			}
 		}
 
-		if !compareValue {
-			// We're skipping this key due to an exclusion prefix.  If it's present in B, iterate past it.  If it's
-			// absent don't iterate.
-			if bytes.Equal(kvA.Key, kvB.Key) {
-				iterB.Next()
-			}
-			continue
+		if !skip {
+			kvs = append(kvs, kv.Pair{Key: key, Value: value})
 		}
 
-		// always iterate B when comparing
-		iterB.Next()
-
-		if !bytes.Equal(kvA.Key, kvB.Key) || !bytes.Equal(kvA.Value, kvB.Value) {
-			kvAs = append(kvAs, kvA)
-			kvBs = append(kvBs, kvB)
-		}
+		iter.Next()
 	}
+
+	// sort the KV pairs by key
+	sort.Slice(kvs, func(i, j int) bool {
+		return bytes.Compare(kvs[i].Key, kvs[j].Key) < 0
+	})
+
+	return kvs
 }
