@@ -139,20 +139,20 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 	iterB := b.Iterator(nil, nil)
 	defer iterB.Close()
 
-	kvAs := make([]kv.Pair, 0)
-	kvBs := make([]kv.Pair, 0)
-
 	var wg sync.WaitGroup
+
 	wg.Add(1)
+	kvAs := make([]kv.Pair, 0)
 	go func() {
 		defer wg.Done()
-		kvAs = getKVPair(iterA, prefixesToSkip)
+		kvAs = getKVPairs(iterA, prefixesToSkip)
 	}()
 
 	wg.Add(1)
+	kvBs := make([]kv.Pair, 0)
 	go func() {
 		defer wg.Done()
-		kvBs = getKVPair(iterB, prefixesToSkip)
+		kvBs = getKVPairs(iterB, prefixesToSkip)
 	}()
 
 	wg.Wait()
@@ -175,7 +175,7 @@ func getDiffFromKVPair(kvAs, kvBs []kv.Pair) (diffA, diffB []kv.Pair) {
 		return []kv.Pair{}, kvBs
 	}
 
-	index := make(map[string][]byte, len(kvBs)+len(kvAs))
+	index := make(map[string][]byte, len(kvBs))
 	for _, kv := range kvBs {
 		index[string(kv.Key)] = kv.Value
 	}
@@ -193,16 +193,8 @@ func getDiffFromKVPair(kvAs, kvBs []kv.Pair) (diffA, diffB []kv.Pair) {
 	return diffA, diffB
 }
 
-func getKVPair(iter dbm.Iterator, prefixesToSkip [][]byte) []kv.Pair {
-	kvs := make([]kv.Pair, 0)
-
+func getKVPairs(iter dbm.Iterator, prefixesToSkip [][]byte) (kvs []kv.Pair) {
 	for iter.Valid() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Printf("recovered from panic: %v\n", r)
-			}
-		}()
-
 		key, value := iter.Key(), iter.Value()
 
 		// do not add the KV pair if the key is prefixed to be skipped.
