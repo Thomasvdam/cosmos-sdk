@@ -22,8 +22,8 @@ func NewDecodeStore(cdc codec.BinaryCodec) func(kvA, kvB kv.Pair) string {
 			return fmt.Sprintf("%v\n%v", infoA, infoB)
 
 		case bytes.Equal(kvA.Key[:1], types.ValidatorMissedBlockBitmapKeyPrefix):
+			// no decoding needed as we do not have access to the validator address here
 			return fmt.Sprintf("missedA: %v\nmissedB: %v\n", kvA.Value, kvB.Value)
-
 		case bytes.Equal(kvA.Key[:1], types.AddrPubkeyRelationKeyPrefix):
 			var pubKeyA, pubKeyB cryptotypes.PubKey
 			if err := cdc.UnmarshalInterface(kvA.Value, &pubKeyA); err != nil {
