@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	gogotypes "github.com/cosmos/gogoproto/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
@@ -24,10 +22,7 @@ func NewDecodeStore(cdc codec.BinaryCodec) func(kvA, kvB kv.Pair) string {
 			return fmt.Sprintf("%v\n%v", infoA, infoB)
 
 		case bytes.Equal(kvA.Key[:1], types.ValidatorMissedBlockBitmapKeyPrefix):
-			var missedA, missedB gogotypes.BoolValue
-			cdc.MustUnmarshal(kvA.Value, &missedA)
-			cdc.MustUnmarshal(kvB.Value, &missedB)
-			return fmt.Sprintf("missedA: %v\nmissedB: %v", missedA.Value, missedB.Value)
+			return fmt.Sprintf("missedA: %v\nmissedB: %v\n", kvA.Value, kvB.Value)
 
 		case bytes.Equal(kvA.Key[:1], types.AddrPubkeyRelationKeyPrefix):
 			var pubKeyA, pubKeyB cryptotypes.PubKey
