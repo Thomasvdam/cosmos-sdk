@@ -166,6 +166,8 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 				diffB = append(diffB, kvBs[i])
 			}
 		}
+
+		diffA = append(diffA, kvAs[len(kvBs):]...)
 	} else {
 		for i := 0; i < len(kvAs); i++ {
 			if !bytes.Equal(kvAs[i].Key, kvBs[i].Key) || !bytes.Equal(kvAs[i].Value, kvBs[i].Value) {
@@ -173,6 +175,8 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 				diffB = append(diffB, kvBs[i])
 			}
 		}
+
+		diffB = append(diffB, kvBs[len(kvAs):]...)
 	}
 
 	return diffA, diffB
