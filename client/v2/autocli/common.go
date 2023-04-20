@@ -98,8 +98,7 @@ func (b *Builder) enhanceCommandCommon(cmd *cobra.Command, moduleOptions map[str
 			continue
 		}
 
-		err := buildModuleCommand(cmd, modOpts, moduleName)
-		if err != nil {
+		if err := buildModuleCommand(cmd, modOpts, moduleName); err != nil {
 			return err
 		}
 	}

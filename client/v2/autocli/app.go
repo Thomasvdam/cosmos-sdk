@@ -74,7 +74,6 @@ func (appOptions AppOptions) EnhanceRootCommandWithBuilder(rootCmd *cobra.Comman
 	moduleOptions := appOptions.ModuleOptions
 	if moduleOptions == nil {
 		moduleOptions = map[string]*autocliv1.ModuleOptions{}
-
 		for name, module := range appOptions.Modules {
 			if module, ok := module.(HasAutoCLIConfig); ok {
 				moduleOptions[name] = module.AutoCLIOptions()
@@ -82,8 +81,7 @@ func (appOptions AppOptions) EnhanceRootCommandWithBuilder(rootCmd *cobra.Comman
 		}
 	}
 
-	customQueryCmds := map[string]*cobra.Command{}
-	customMsgCmds := map[string]*cobra.Command{}
+	customQueryCmds, customMsgCmds := map[string]*cobra.Command{}, map[string]*cobra.Command{}
 	for name, module := range appOptions.Modules {
 		if queryModule, ok := module.(HasCustomQueryCommand); ok {
 			queryCmd := queryModule.GetQueryCmd()
