@@ -159,6 +159,8 @@ func DiffKVStores(a, b storetypes.KVStore, prefixesToSkip [][]byte) (diffA, diff
 
 	wg.Wait()
 
+	fmt.Printf("...with %d k/v pairs in store A and %d k/v pairs in store B\n", len(kvAs), len(kvBs))
+
 	return getDiffFromKVPair(kvAs, kvBs)
 }
 
@@ -185,11 +187,20 @@ func getDiffFromKVPair(kvAs, kvBs []kv.Pair) (diffA, diffB []kv.Pair) {
 	for _, kvA := range kvAs {
 		if kvBValue, ok := index[string(kvA.Key)]; !ok {
 			diffA = append(diffA, kvA)
-			diffB = append(diffB, kv.Pair{}) // the key is missing from kvB so we append an empty KVPair
+			diffB = append(diffB, kv.Pair{Key: kvA.Key}) // the key is missing from kvB so we append a pair with an empty value
 		} else if !bytes.Equal(kvA.Value, kvBValue) {
 			diffA = append(diffA, kvA)
 			diffB = append(diffB, kv.Pair{Key: kvA.Key, Value: kvBValue})
+		} else {
+			// values are equal, so we remove the key from the index
+			delete(index, string(kvA.Key))
 		}
+	}
+
+	// add the remaining keys from kvB
+	for key, value := range index {
+		diffA = append(diffA, kv.Pair{Key: []byte(key)}) // the key is missing from kvA so we append a pair with an empty value
+		diffB = append(diffB, kv.Pair{Key: []byte(key), Value: value})
 	}
 
 	return diffA, diffB
