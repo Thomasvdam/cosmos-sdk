@@ -14,7 +14,7 @@ func InitGenesis(
 	deliverTx deliverTxfn, genesisState types.GenesisState,
 	txEncodingConfig client.TxEncodingConfig,
 ) (validators []abci.ValidatorUpdate, err error) {
-	k.Logger(ctx).Debug("Init genUtils", len(genesisState.GenTxs))
+	ctx.Logger().Debug("Init genUtils", len(genesisState.GenTxs))
 	if len(genesisState.GenTxs) > 0 {
 		validators, err = DeliverGenTxs(ctx, genesisState.GenTxs, stakingKeeper, deliverTx, txEncodingConfig)
 	}

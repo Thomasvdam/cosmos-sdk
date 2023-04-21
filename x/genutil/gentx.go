@@ -94,7 +94,7 @@ func DeliverGenTxs(
 	stakingKeeper types.StakingKeeper, deliverTx deliverTxfn,
 	txEncodingConfig client.TxEncodingConfig,
 ) ([]abci.ValidatorUpdate, error) {
-	k.Logger(ctx).Debug("Deliver transactions")
+	ctx.Logger().Debug("Deliver transactions")
 
 	for _, genTx := range genTxs {
 		tx, err := txEncodingConfig.TxJSONDecoder()(genTx)
@@ -113,7 +113,7 @@ func DeliverGenTxs(
 		}
 	}
 
-	k.Logger(ctx).Debug("Deliver staking transactions")
+	ctx.Logger().Debug("Deliver staking transactions")
 
 	return stakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 }
