@@ -1,6 +1,7 @@
 package genutil
 
 import (
+	"fmt"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -14,7 +15,7 @@ func InitGenesis(
 	deliverTx deliverTxfn, genesisState types.GenesisState,
 	txEncodingConfig client.TxEncodingConfig,
 ) (validators []abci.ValidatorUpdate, err error) {
-	ctx.Logger().Debug("Init genUtils", len(genesisState.GenTxs))
+	ctx.Logger().Debug("Init genUtils len: " + fmt.Sprintf("%d", len(genesisState.GenTxs)))
 	if len(genesisState.GenTxs) > 0 {
 		validators, err = DeliverGenTxs(ctx, genesisState.GenTxs, stakingKeeper, deliverTx, txEncodingConfig)
 	}
