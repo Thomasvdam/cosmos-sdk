@@ -253,11 +253,11 @@ func (k Keeper) ValidatorsPowerStoreIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	// random
 	if rand1() {
-		k.Logger(ctx).Warn("REVERSE")
+		k.Logger(ctx).Debug("REVERSE")
 		return sdk.KVStoreReversePrefixIterator(store, types.ValidatorsByPowerIndexKey)
 	}
 
-	k.Logger(ctx).Warn("NON_REVERSE")
+	k.Logger(ctx).Debug("NON_REVERSE")
 	return sdk.KVStorePrefixIterator(store, types.ValidatorsByPowerIndexKey)
 }
 
