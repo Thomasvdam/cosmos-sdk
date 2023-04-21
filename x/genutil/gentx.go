@@ -94,6 +94,8 @@ func DeliverGenTxs(
 	stakingKeeper types.StakingKeeper, deliverTx deliverTxfn,
 	txEncodingConfig client.TxEncodingConfig,
 ) ([]abci.ValidatorUpdate, error) {
+	k.Logger(ctx).Debug("Deliver transactions")
+
 	for _, genTx := range genTxs {
 		tx, err := txEncodingConfig.TxJSONDecoder()(genTx)
 		if err != nil {
@@ -110,6 +112,8 @@ func DeliverGenTxs(
 			return nil, fmt.Errorf("failed to execute DelverTx for '%s': %s", genTx, res.Log)
 		}
 	}
+
+	k.Logger(ctx).Debug("Deliver staking transactions")
 
 	return stakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 }
