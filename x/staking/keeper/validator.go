@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 	"time"
-	"math/rand"
 
 	"cosmossdk.io/math"
 	gogotypes "github.com/gogo/protobuf/types"
@@ -244,21 +243,10 @@ func (k Keeper) GetBondedValidatorsByPower(ctx sdk.Context) []types.Validator {
 	return validators[:i] // trim
 }
 
-func rand1() bool {
-    return rand.Float32() < 0.5
-}
-
 // returns an iterator for the current validator power store
 func (k Keeper) ValidatorsPowerStoreIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	// random
-	if rand1() {
-		k.Logger(ctx).Debug("REVERSE")
-		return sdk.KVStoreReversePrefixIterator(store, types.ValidatorsByPowerIndexKey)
-	}
-
-	k.Logger(ctx).Debug("NON_REVERSE")
-	return sdk.KVStorePrefixIterator(store, types.ValidatorsByPowerIndexKey)
+	return sdk.KVStoreReversePrefixIterator(store, types.ValidatorsByPowerIndexKey)
 }
 
 // Last Validator Index
