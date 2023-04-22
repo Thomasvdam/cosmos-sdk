@@ -136,7 +136,10 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		}
 
 		valAddrStrHack, errHack := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32ValidatorAddrPrefix(), valAddr)
-		if _, present := myMap[valAddrStrHack]; present {
+		if errHack != nil {
+			return nil, errHack
+		}
+		if _, present := last[valAddrStrHack]; present {
 			// Switch validators every block
 			continue
 		}
