@@ -135,6 +135,12 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			panic("should never retrieve a jailed validator from the power store")
 		}
 
+		valAddrStrHack, errHack := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32ValidatorAddrPrefix(), valAddr)
+		if _, present := myMap[valAddrStrHack]; present {
+			// Switch validators every block
+			continue
+		}
+
 		// if we get to a zero-power validator (which we don't bond),
 		// there are no more possible bonded validators
 		if validator.PotentialConsensusPower(k.PowerReduction(ctx)) == 0 {
